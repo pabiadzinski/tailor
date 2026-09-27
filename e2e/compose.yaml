@@ -1,0 +1,75 @@
+name: e2e
+
+x-base: &base
+  image: alpine:3
+  restart: "no"
+  stop_grace_period: 0s
+
+services:
+  json:
+    <<: *base
+    command:
+      - sh
+      - -c
+      - |
+        for i in $(seq 1 30); do echo "{\"time\":\"t\",\"level\":\"info\",\"msg\":\"job done\",\"job\":$$i,\"tags\":[\"a\"]}"; done
+        echo '{"level":"error","msg":"job failed","job":31,"err":"context deadline exceeded"}' >&2
+        exec sleep infinity
+
+  text:
+    <<: *base
+    command:
+      - sh
+      - -c
+      - |
+        echo 'level=INFO msg="request done" err=<nil>'
+        echo 'level=WARN msg="slow request"'
+        echo 'plain stderr line' >&2
+        echo '[E] custom failure'
+        printf '\033[31mred\033[0m and \033[1;32mbold green\033[0m\n'
+        exec sleep infinity
+
+  orders:
+    <<: *base
+    command:
+      - sh
+      - -c
+      - |
+        echo 'level=INFO msg="order created" trace_id=4bf92f3577b34da6'
+        echo 'level=INFO msg="order listed" trace_id=00f067aa0ba902b7'
+        exec sleep infinity
+
+  payments:
+    <<: *base
+    command:
+      - sh
+      - -c
+      - |
+        sleep 0.2
+        echo '{"level":"info","msg":"payment captured","trace_id":"4bf92f3577b34da6"}'
+        echo '{"level":"info","msg":"refund checked","trace_id":"b7ad6b7169203331"}'
+        exec sleep infinity
+
+  restarter:
+    <<: *base
+    command:
+      - sh
+      - -c
+      - |
+        for i in 1 2 3; do echo "boot line $$i"; done
+        exec sleep infinity
+
+  bulk:
+    <<: *base
+    command:
+      - sh
+      - -c
+      - |
+        i=1
+        while [ $$i -le 5000 ]; do
+          if [ $$((i % 1000)) -eq 0 ]; then echo "line $$i needle"
+          elif [ $$i -eq 2500 ]; then echo "line $$i ERROR boom"
+          else echo "line $$i"; fi
+          i=$$((i + 1))
+        done
+        exec sleep infinity

@@ -1,0 +1,3 @@
+[[rule]]
+container = "e2e-text-*"
+error = '^\[E\]'

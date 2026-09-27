@@ -1,0 +1,5 @@
+[[rule]]
+container = "demo-legacy-*"
+error = '^\[E\]'
+warn = '^\[W\]'
+info = '^\[I\]'

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tailr</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2322d3a6'/><path d='M8 10h16M8 16h11M8 22h14' stroke='%230b0f14' stroke-width='3' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="wrap">
+<aside>
+  <div class="brand">
+    <div class="logo">
+      <svg width="14" height="14" viewBox="0 0 16 16"><path d="M3 4h10M3 8h7M3 12h9" stroke="#0b0f14" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+    tailr
+    <span class="ver">v{{version}}</span>
+    <span class="spacer"></span>
+    <button class="icon-btn" id="theme" title="Toggle theme">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+  <div class="search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="csearch" placeholder="Find container" autocomplete="off">
+  </div>
+  <div class="side-opts">
+    <label><input type="checkbox" id="show-all"> Show stopped</label>
+    <span class="side-right">
+      <button id="clear-errors" title="Clear error counters" hidden>Clear errors</button>
+      <span id="ccount"></span>
+    </span>
+  </div>
+  <div id="list"></div>
+</aside>
+
+<main>
+  <header>
+    <div class="title">
+      <h1 id="c-name">No container selected</h1>
+      <div class="sub" id="c-sub">Pick a container on the left</div>
+    </div>
+    <div class="search trace-search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="18" r="2"/><path d="M7 6h4l4 6M7 18h4l4-6"/></svg>
+      <input id="trace" placeholder="Find trace ID" title="Show every line with this trace ID across all containers" autocomplete="off" spellcheck="false">
+    </div>
+    <span class="pill" id="c-state" hidden></span>
+  </header>
+  <div class="toolbar">
+    <div class="search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="filter" placeholder="Search logs" title="Text or /regex/. Enter: next match, Shift+Enter: previous, Alt+Enter: search all history" autocomplete="off">
+      <span class="counter" id="hits"></span>
+      <button class="icon-btn" id="t-history" title="Search all history (Alt+Enter)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>
+      </button>
+      <button class="icon-btn" id="t-filter" title="Show only matching lines">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>
+      </button>
+      <kbd>/</kbd>
+    </div>
+    <div class="seg" id="levels">
+      <button data-level="" class="on">All</button>
+      <button data-level="error">Error</button>
+      <button data-level="warn">Warn</button>
+      <button data-level="info">Info</button>
+      <button data-level="debug">Debug</button>
+    </div>
+    <select id="tail" title="Initial lines">
+      <option value="100">Last 100</option>
+      <option value="500" selected>Last 500</option>
+      <option value="2000">Last 2000</option>
+      <option value="10000">Last 10000</option>
+    </select>
+    <span class="grow"></span>
+    <button class="err-chip" id="t-errors" hidden></button>
+    <span class="counter" id="counter"></span>
+    <button class="icon-btn on" id="t-ts" title="Timestamps">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    </button>
+    <button class="icon-btn on" id="t-wrap" title="Wrap lines">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h15a3 3 0 0 1 0 6h-4m2-2-2 2 2 2M3 18h7"/></svg>
+    </button>
+    <button class="icon-btn" id="t-clear" title="Clear">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+    </button>
+    <button class="icon-btn" id="t-dl" title="Download">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg>
+    </button>
+    <button class="icon-btn" id="t-help" title="Keyboard shortcuts (?)">?</button>
+  </div>
+  <div id="notice" hidden></div>
+  <div id="banner" hidden><span></span><button id="back-live">Back to live</button></div>
+  <div id="logs-wrap">
+    <div id="logs"><div id="spacer"><div id="rows"></div></div></div>
+    <div id="marks" title="Errors and warnings"></div>
+    <div class="placeholder" id="placeholder"><div>
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h6M7 17h8"/></svg>
+      <h2>Container logs, live</h2>
+      <div>Select a container to start streaming</div>
+    </div></div>
+    <button id="jump">↓ Jump to latest</button>
+  </div>
+</main>
+
+<dialog id="help">
+  <h2>Keyboard shortcuts</h2>
+  <table>
+    <tr><th colspan="2">Search</th></tr>
+    <tr><td><kbd>/</kbd> <kbd>⌘F</kbd></td><td>Focus search</td></tr>
+    <tr><td><kbd>n</kbd> <kbd>N</kbd></td><td>Next / previous match</td></tr>
+    <tr><td><kbd>Enter</kbd> <kbd>⇧Enter</kbd></td><td>Next / previous match, in the search box</td></tr>
+    <tr><td><kbd>⌥Enter</kbd></td><td>Search all history</td></tr>
+    <tr><td><kbd>f</kbd></td><td>Only matching lines</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Clear search, leave history or trace</td></tr>
+    <tr><th colspan="2">Navigation</th></tr>
+    <tr><td><kbd>e</kbd> <kbd>E</kbd></td><td>Previous / next error</td></tr>
+    <tr><td><kbd>j</kbd> <kbd>k</kbd></td><td>Scroll down / up</td></tr>
+    <tr><td><kbd>g</kbd> <kbd>G</kbd></td><td>Oldest line / latest line and follow</td></tr>
+    <tr><th colspan="2">View</th></tr>
+    <tr><td><kbd>0</kbd> <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd></td><td>All levels, error, warn, info, debug</td></tr>
+    <tr><td><kbd>w</kbd> <kbd>t</kbd></td><td>Wrap lines, timestamps</td></tr>
+    <tr><td><kbd>?</kbd></td><td>This help</td></tr>
+  </table>
+</dialog>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

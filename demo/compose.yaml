@@ -1,0 +1,37 @@
+name: demo
+
+x-base: &base
+  image: alpine:3
+  command: sh /logger.sh
+  volumes:
+    - ./logger.sh:/logger.sh:ro
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "2"
+
+services:
+  api:
+    <<: *base
+    environment: { MODE: slog }
+  worker:
+    <<: *base
+    environment: { MODE: json }
+  web:
+    <<: *base
+    environment: { MODE: nginx }
+  frontend:
+    <<: *base
+    environment: { MODE: ansi, DELAY: "2" }
+  legacy:
+    <<: *base
+    environment: { MODE: legacy }
+  crasher:
+    <<: *base
+    environment: { MODE: crash }
+  flood:
+    <<: *base
+    environment: { MODE: flood }
+    profiles: [flood]
