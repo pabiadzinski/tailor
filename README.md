@@ -51,7 +51,7 @@ Settings are command line options or environment variables (`tailr --help`):
 
 ### Log levels
 
-The level comes from a `level`, `lvl`, `severity` or `log_level` key, otherwise from the first level word in the line (`ERROR`, `WARN`, …). Lines on stderr without a level count as errors.
+The level comes from a `level`, `lvl`, `severity` or `log_level` key, from the status of an HTTP access log line (5xx error, 4xx warning, others info), otherwise from the first level word in the line (`ERROR`, `WARN`, …). Lines on stderr without a level count as errors.
 
 Change this for all containers with options or variables, for example `TAILR_STDERR=""` to stop treating stderr as errors. For rules per container, mount a rules file as `/tailr.toml`:
 

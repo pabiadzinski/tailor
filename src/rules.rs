@@ -40,6 +40,8 @@ const DEFAULT_KEYS: [&str; 4] = ["level", "lvl", "severity", "log_level"];
 static DEFAULT_LEVELS: LazyLock<[Regex; 4]> =
     LazyLock::new(|| LEVELS.map(|(_, words)| Regex::new(&format!(r"(?i-u)\b(?:{})\b", words.join("|"))).unwrap()));
 
+static ACCESS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#""[A-Z]+ \S+ HTTP/[0-9.]+" ([1-5])[0-9]{2}\b"#).unwrap());
+
 fn level_alias(s: &str) -> Option<&'static str> {
     LEVELS
         .iter()
@@ -128,7 +130,7 @@ pub struct Detector {
 }
 
 impl Detector {
-    /// Level by the first of: JSON level key, `key=value`, leftmost level word, stderr fallback.
+    /// Level by the first of: JSON level key, `key=value`, access log status, leftmost level word, stderr fallback.
     pub fn level(&self, json: Option<&Map<String, Value>>, plain: &str, stderr: bool) -> &'static str {
         let from_json = json.and_then(|o| self.keys.iter().find_map(|k| o.get(k)?.as_str())).and_then(level_alias);
         let level = from_json.unwrap_or_else(|| self.detect(plain));
@@ -141,6 +143,15 @@ impl Detector {
             && let Some(level) = self.kv.captures(head).and_then(|c| level_alias(&c[1]))
         {
             return level;
+        }
+        if head.contains(" HTTP/")
+            && let Some(c) = ACCESS.captures(head)
+        {
+            return match &c[1] {
+                "5" => "error",
+                "4" => "warn",
+                _ => "info",
+            };
         }
         self.levels
             .iter()
@@ -178,6 +189,11 @@ mod tests {
             ("json-1", "sev=warning x", "warn"),
             ("json-1", "sev=info level=error", "info"),
             ("json-12", "sev=info level=error", "error"),
+            ("api", r#"10.0.0.1 - - [28/Sep/2026 09:52:16] "GET /api/v1/rates HTTP/1.1" 200 -"#, "info"),
+            ("api", r#"10.0.0.1 - - [28/Sep/2026:09:52:16 +0000] "GET /errors HTTP/1.1" 304 0"#, "info"),
+            ("api", r#"INFO: 10.0.0.1:5000 - "POST /login HTTP/1.1" 404 Not Found"#, "warn"),
+            ("api", r#"INFO: 10.0.0.1:5000 - "GET /x HTTP/2.0" 502 Bad Gateway"#, "error"),
+            ("api", r#"level=debug "GET /x HTTP/1.1" 500"#, "debug"),
         ];
         for (container, line, want) in cases {
             let got = rules.for_container(container).detect(line);
@@ -198,6 +214,7 @@ mod tests {
             ("any", Some(&json), "ERROR here", false, "warn"),
             ("any", None, "boom", true, "error"),
             ("any", None, "boom", false, ""),
+            ("any", None, r#"1.2.3.4 - - [x] "GET / HTTP/1.1" 200 -"#, true, "info"),
             ("quiet", None, "boom", true, ""),
             ("quiet", None, "level=error boom", true, "error"),
             ("soft", None, "boom", true, "warn"),
