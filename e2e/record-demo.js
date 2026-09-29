@@ -32,7 +32,7 @@ try {
 async function record() {
   const dir = mkdtempSync(join(tmpdir(), "tailr-demo-"));
   const browser = await chromium.launch();
-  const context = await browser.newContext({ viewport: size, colorScheme: "dark", recordVideo: { dir, size } });
+  const context = await browser.newContext({ viewport: size, colorScheme: "light", recordVideo: { dir, size } });
   await context.addInitScript(showCursor);
   // Show only the demo project, not whatever else runs on this machine.
   await context.route("**/api/containers", async (route) => {
@@ -87,7 +87,8 @@ async function record() {
   await filter.press("Enter");
   await pause(900);
   await filter.press("Escape");
-  await click(page.locator("#jump"));
+  const jump = page.locator("#jump");
+  if (await jump.isVisible()) await click(jump);
   await pause(800);
 
   await click(page.locator("#list .group", { hasText: "demo" }));
@@ -127,7 +128,7 @@ function showCursor() {
     const dot = document.createElement("div");
     dot.style.cssText =
       "position:fixed;z-index:99999;left:-40px;top:-40px;width:18px;height:18px;border-radius:50%;" +
-      "background:rgba(255,255,255,.3);border:2px solid #fff;pointer-events:none;transform:translate(-50%,-50%)";
+      "background:rgba(0,0,0,.2);border:2px solid #222;pointer-events:none;transform:translate(-50%,-50%)";
     document.body.appendChild(dot);
     addEventListener("mousemove", (e) => { dot.style.left = e.clientX + "px"; dot.style.top = e.clientY + "px"; }, true);
     addEventListener("mousedown", () => { dot.style.transform = "translate(-50%,-50%) scale(.7)"; }, true);
